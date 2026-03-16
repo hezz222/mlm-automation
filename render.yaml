@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: mlm-automation
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn mlm_automation_starter:app --host 0.0.0.0 --port $PORT
