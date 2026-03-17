@@ -621,8 +621,9 @@ async def systeme_webhook(
     x_systeme_secret: Optional[str] = Header(default=None),
 ) -> Dict[str, Any]:
     payload = await request.json()
+    print("SYSTEME PAYLOAD:", payload)
     event_type = payload.get("type", "unknown")
-
+    
     # Note:
     # systeme.io lets you set a secret key when creating the webhook.
     # Depending on your setup, you may validate that secret through headers,
