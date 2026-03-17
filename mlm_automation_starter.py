@@ -603,7 +603,10 @@ def upsert_lead_from_systeme(payload: Dict[str, Any]) -> Dict[str, Any]:
         interest=payload.get("type") or "contact.created",
         source="systeme.io webhook",
     )
-    return LeadService.create(lead)
+
+    created = LeadService.create(lead)
+    print("CREATED LEAD:", created, flush=True)
+    return created
 
 
 # =========================
@@ -632,7 +635,7 @@ async def systeme_webhook(
     try:
         payload = await request.json()
         print("SYSTEME PAYLOAD:", payload, flush=True)
-        event_type = payload.get("type", "unknown")
+        event_type = payload.get("type") or "contact.created"
 
         if x_systeme_secret and x_systeme_secret != SYSTEME_WEBHOOK_SECRET:
             raise HTTPException(status_code=401, detail="Invalid webhook secret")
@@ -641,15 +644,7 @@ async def systeme_webhook(
 
         created_lead: Optional[Dict[str, Any]] = None
         if payload.get("contact") or payload.get("data", {}).get("contact") or payload.get("data", {}).get("customer"):
-            try:
-                created_lead = upsert_lead_from_systeme(payload)
-            except Exception as exc:
-                log_event(event_type="systeme_webhook_error", payload=str(exc))
-                return {
-                    "ok": False,
-                    "received_type": event_type,
-                    "error": str(exc),
-                }
+            created_lead = upsert_lead_from_systeme(payload)
 
         return {
             "ok": True,
@@ -659,6 +654,7 @@ async def systeme_webhook(
     except HTTPException:
         raise
     except Exception as exc:
+        print("WEBHOOK ERROR:", str(exc), flush=True)
         log_event(event_type="systeme_webhook_fatal", payload=str(exc))
         return {
             "ok": False,
@@ -843,3 +839,4 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="127.0.0.1", port=8000)
+
